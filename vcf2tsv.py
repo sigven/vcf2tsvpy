@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
 import argparse
-import vcf
-import re
 from cyvcf2 import VCF, Writer
 import numpy as np
 
@@ -28,7 +26,6 @@ def strip_null_values(dat):
          return dat
    if len(elements) > 1:
       stripped_for_null_values = [item for item in elements if (item != '-2147483647' and item != '-2147483648')]
-      #stripped_for_null_values = [item for item in stripped_for_null_values if item != '-2147483648']
       if len(stripped_for_null_values) == 0:
          return '.'
       return ','.join(stripped_for_null_values)
@@ -81,7 +78,6 @@ def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejecte
             header_line = '\t'.join(fixed_columns_header)
 
    out.write(str(header_line) + '\n')
-   #print str(header_line)
    for rec in vcf:
       rec_id = '.'
       rec_qual = '.'
@@ -154,13 +150,11 @@ def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejecte
                if sample_dat[j].size > 1:
                   d = ','.join(str(e) for e in np.ndarray.tolist(sample_dat[j]))
                   dat = strip_null_values(d)
-                  #print str(format_tag) + '\t' + str(d) + '\t' + str(dat)
                   if vcf_sample_genotype_data.has_key(samples[j]):
                      vcf_sample_genotype_data[samples[j]][format_tag] = dat
                else:
                   d = str(sample_dat[j][0])
                   dat = strip_null_values(d)
-                  #print str(format_tag) + '\t' + str(d) + '\t' + str(dat)
                   if vcf_sample_genotype_data.has_key(samples[j]):
                      vcf_sample_genotype_data[samples[j]][format_tag] = dat
                j = j + 1
@@ -208,7 +202,6 @@ def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejecte
                      else:
                         gt_tag = vcf_sample_genotype_data[sample][tag]
                   line_elements.append(gt_tag)
-                  #print str(line_elements)
                   out.write('\t'.join(line_elements) + '\n')
             else:
                line_elements = []
