@@ -1,11 +1,15 @@
 # vcf2tsv
-Python script for conversion of VCF data to tab-separated values (TSV)
+__Python script for conversion of VCF data to tab-separated values (TSV)__
 
-A small script that converts genomic variant data encoded in VCF format into a tab-separated values. The script utilizes [brentp/cyvcf2](https://github.com/brentp/cyvcf2) to parse the VCF file. By default, the program prints the fixed VCF columns, all INFO tag values (as defined in the VCF header), and all genotype data (FORMAT columns) for heterozygotes/homozygotes. If genotype data is present, it prints one line per sample. It has optional arguments to 
+A small script that converts genomic variant data encoded in VCF format into a tab-separated values file. The script utilizes [brentp/cyvcf2](https://github.com/brentp/cyvcf2) to parse the VCF file. By default, the program prints the fixed VCF columns, all INFO tag values (as defined in the VCF header, INFO tags not present in a given record is appended with a '.'), and all genotype data (FORMAT columns) for heterozygotes/homozygotes. If genotype data is present, it prints one line per sample. It has optional arguments to 
 
 * skip sample genotype data (i.e. FORMAT colums)
 * keep rejected genotypes (i.e. genotypes with GT = './.') 
 * skip INFO data.
+
+## Installation
+
+Running vcf2tsv requires that you have [cyvcf2](https://github.com/brentp/cyvcf2) and [numpy](https://scipy.org/install.html) installed. This can be achieved easily through the use of [pip](https://pip.pypa.io/en/stable)
 
 ## Usage:
 
