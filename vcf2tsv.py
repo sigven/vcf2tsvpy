@@ -14,21 +14,6 @@ def __main__():
    args = parser.parse_args()
    
    vcf2tsv(args.query_vcf, args.out_tsv, args.skip_info_data, args.skip_genotype_data, args.keep_rejected_calls)
-
-def strip_null_values(dat):
-   if dat == '-2147483648' or dat == -2147483648:
-      return '.'
-   elements = dat.split(',')
-   if len(elements) == 1:
-      if elements[0] == '-2147483648':
-         return '.'
-      else:
-         return dat
-   if len(elements) > 1:
-      stripped_for_null_values = [item for item in elements if (item != '-2147483647' and item != '-2147483648')]
-      if len(stripped_for_null_values) == 0:
-         return '.'
-      return ','.join(stripped_for_null_values)
          
 
 def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejected_calls):
@@ -147,25 +132,20 @@ def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejecte
       for format_tag in sorted(format_columns_header):
          if len(samples) > 0 and skip_genotype_data is False:
             sample_dat = rec.format(format_tag)
+            if sample_dat is None:
+               continue
             dim = sample_dat.shape
             j = 0
             ## sample-wise
             while j < dim[0]:
-               print str(format_tag) + '\t' + str(sample_dat[j].size) + '\t' + str(sample_dat)
                if sample_dat[j].size > 1:
                   d = ','.join(str(e) for e in np.ndarray.tolist(sample_dat[j]))
-                  dat = strip_null_values(d)
                   if vcf_sample_genotype_data.has_key(samples[j]):
-                     vcf_sample_genotype_data[samples[j]][format_tag] = dat
+                     vcf_sample_genotype_data[samples[j]][format_tag] = d
                else:
                   d = str(sample_dat[j][0])
-                  dat = d
-                  if not ',' in d:
-                     dat = strip_null_values(d)
-                  #if j == 2:
-                  #print str(d) + '\t' + str(dat) + '\t' + str(format_tag)
                   if vcf_sample_genotype_data.has_key(samples[j]):
-                     vcf_sample_genotype_data[samples[j]][format_tag] = dat
+                     vcf_sample_genotype_data[samples[j]][format_tag] = d
                j = j + 1
       
       tsv_elements = []
