@@ -129,20 +129,20 @@ def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejecte
       #dictionary, with sample names as keys, values being genotype data (dictionary with format tags as keys)
       vcf_sample_genotype_data = {}
       if len(samples) > 0 and skip_genotype_data is False:
-         if gt_present_header == 1:
-            gt_cyvcf = rec.gt_types
-            i = 0
-            while i < len(samples):
-               vcf_sample_genotype_data[samples[i]] = {}
-               gt = './.'
+         gt_cyvcf = rec.gt_types
+         i = 0
+         while i < len(samples):
+            vcf_sample_genotype_data[samples[i]] = {}
+            gt = './.'
+            if gt_present_header == 1:
                if gt_cyvcf[i] == 0:
                   gt = '0/0'
                if gt_cyvcf[i] == 1:
                   gt = '0/1'
                if gt_cyvcf[i] == 2:
                   gt = '1/1'
-               vcf_sample_genotype_data[samples[i]]['GT'] = gt
-               i = i + 1
+            vcf_sample_genotype_data[samples[i]]['GT'] = gt
+            i = i + 1
                
       for format_tag in sorted(format_columns_header):
          if len(samples) > 0 and skip_genotype_data is False:
