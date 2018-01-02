@@ -4,7 +4,7 @@ __Python script for conversion of VCF data to tab-separated values (TSV)__
 A small script that converts genomic variant data encoded in VCF format into a tab-separated values file. The script utilizes [brentp/cyvcf2](https://github.com/brentp/cyvcf2) to parse the VCF file. By default, the program prints the fixed VCF columns, all INFO tag values (as defined in the VCF header, INFO tags not present in a given record is appended with a '.'), and all genotype data (FORMAT columns) for heterozygotes and homozygotes. If genotype data is present, it prints one line per sample, and a column denoted VCF\_SAMPLE_ID indicates data for a given sample. The script has optional arguments to 
 
 * skip sample genotype data (i.e. FORMAT colums)
-* keep rejected genotypes (i.e. genotypes with GT = './.') 
+* keep rejected genotypes (i.e. FILTER != 'PASS') 
 * skip INFO data.
 
 ## Installation
