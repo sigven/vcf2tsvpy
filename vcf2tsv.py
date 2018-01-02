@@ -75,17 +75,11 @@ def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejecte
       rec_filter = str(rec.FILTER)
       if rec.FILTER is None:
          rec_filter = 'PASS'
-      # if type(rec.FILTER) is list:
-      #    if len(rec.FILTER) == 0:
-      #       rec_filter = 'PASS'
-      #    elif len(rec.FILTER) == 1:
-      #       rec_filter = str(rec.FILTER[0])
-      #    else:
-      #       rec_filter = str(';'.join(str(n) for n in rec.FILTER))
+     
       pos = int(rec.start) + 1
       fixed_fields_string = str(rec.CHROM) + '\t' + str(pos) + '\t' + str(rec_id) + '\t' + str(rec.REF) + '\t' + str(alt) + '\t' + str(rec_qual) + '\t' + str(rec_filter)
       
-      if rec_filter != 'PASS' and not keep_rejected_calls:
+      if not 'PASS' in rec_filter and not keep_rejected_calls:
          continue
       
       variant_info = rec.INFO
@@ -175,11 +169,11 @@ def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejecte
                      else:
                         gt_tag = vcf_sample_genotype_data[sample][tag]
                   line_elements.append(gt_tag)
-                  #if gt_tag == './.':
-                     #if not keep_rejected_calls is False:
-                        #out.write('\t'.join(line_elements) + '\n')
-                  #else:
-                  out.write('\t'.join(line_elements) + '\n')
+                  if gt_tag == './.' or gt_tag == '.':
+                     if keep_rejected_calls:
+                        out.write('\t'.join(line_elements) + '\n')
+                  else:
+                     out.write('\t'.join(line_elements) + '\n')
             else:
                tsv_elements.append('\t'.join(vcf_info_data))
                line_elements = []
@@ -206,7 +200,11 @@ def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejecte
                      else:
                         gt_tag = vcf_sample_genotype_data[sample][tag]
                   line_elements.append(gt_tag)
-                  out.write('\t'.join(line_elements) + '\n')
+                  if gt_tag == './.' or gt_tag == '.':
+                     if keep_rejected_calls:
+                        out.write('\t'.join(line_elements) + '\n')
+                  else:
+                     out.write('\t'.join(line_elements) + '\n')
          else:
             line_elements = []
             line_elements.extend(tsv_elements)
