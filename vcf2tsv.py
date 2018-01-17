@@ -3,6 +3,7 @@
 import argparse
 from cyvcf2 import VCF, Writer
 import numpy as np
+import re
 
 def __main__():
    parser = argparse.ArgumentParser(description='Convert a VCF file with genomic variants to a file with tab-separated values (TSV). One entry (TSV line) per sample genotype', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -105,7 +106,8 @@ def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejecte
                         if column_types[info_field] == 'String':
                            vcf_info_data.append(str(variant_info.get(info_field).encode('utf-8')))
                         else:
-                           vcf_info_data.append(str(variant_info.get(info_field)))
+                           vcf_info_data.append(re.sub('\(|\)', '', str(variant_info.get(info_field))))
+
       
       #dictionary, with sample names as keys, values being genotype data (dictionary with format tags as keys)
       vcf_sample_genotype_data = {}
