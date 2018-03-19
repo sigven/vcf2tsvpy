@@ -9,7 +9,7 @@ A small script that converts genomic variant data encoded in VCF format into a t
 
 ## Installation
 
-Running vcf2tsv requires that you have [cyvcf2](https://github.com/brentp/cyvcf2) and [numpy](https://scipy.org/install.html) installed. This can be achieved through the use of [pip](https://pip.pypa.io/en/stable).
+Running vcf2tsv requires Python 3. It also requires that you have [cyvcf2](https://github.com/brentp/cyvcf2) and [numpy](https://scipy.org/install.html) installed. This can be achieved through the use of [pip](https://pip.pypa.io/en/stable).
 
 ## Usage:
 

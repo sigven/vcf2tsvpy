@@ -4,6 +4,8 @@ import argparse
 from cyvcf2 import VCF, Writer
 import numpy as np
 import re
+import subprocess
+
 
 def __main__():
    parser = argparse.ArgumentParser(description='Convert a VCF file with genomic variants to a file with tab-separated values (TSV). One entry (TSV line) per sample genotype', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -12,12 +14,23 @@ def __main__():
    parser.add_argument("--skip_info_data",action = "store_true", help="Skip printing of data in INFO column")
    parser.add_argument("--skip_genotype_data", action="store_true", help="Skip printing of genotype_data (FORMAT columns)")
    parser.add_argument("--keep_rejected_calls", action="store_true", help="Print data for rejected calls")
+   parser.add_argument("--compress", action="store_true", help="Compress TSV file with gzip")
    args = parser.parse_args()
    
-   vcf2tsv(args.query_vcf, args.out_tsv, args.skip_info_data, args.skip_genotype_data, args.keep_rejected_calls)
+   vcf2tsv(args.query_vcf, args.out_tsv, args.skip_info_data, args.skip_genotype_data, args.keep_rejected_calls, args.compress)
          
 
-def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejected_calls):
+def check_subprocess(command):
+   try:
+      output = subprocess.check_output(str(command), stderr=subprocess.STDOUT, shell=True)
+      if len(output) > 0:
+         print (str(output.decode()).rstrip())
+   except subprocess.CalledProcessError as e:
+      print (e.output)
+      exit(0)
+
+
+def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejected_calls, compress):
    
    vcf = VCF(query_vcf, gts012 = True)
    out = open(out_tsv,'w')
@@ -104,7 +117,7 @@ def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejecte
                         vcf_info_data.append(val)
                      else:
                         if column_types[info_field] == 'String':
-                           vcf_info_data.append(str(variant_info.get(info_field).encode('utf-8')))
+                           vcf_info_data.append(str(variant_info.get(info_field)))
                         else:
                            vcf_info_data.append(re.sub('\(|\)', '', str(variant_info.get(info_field))))
 
@@ -130,11 +143,10 @@ def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejecte
       for format_tag in sorted(format_columns_header):
          if len(samples) > 0 and skip_genotype_data is False:
             sample_dat = rec.format(format_tag)
-            ## format tag defined in VCF header, but not present in variant record (add as '.')
             if sample_dat is None:
                k = 0
                while k < len(samples):
-                  if vcf_sample_genotype_data.has_key(samples[k]):
+                  if samples[k] in vcf_sample_genotype_data:
                      vcf_sample_genotype_data[samples[k]][format_tag] = '.'
                   k = k + 1               
                continue
@@ -144,11 +156,15 @@ def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejecte
             while j < dim[0]:
                if sample_dat[j].size > 1:
                   d = ','.join(str(e) for e in np.ndarray.tolist(sample_dat[j]))
-                  if vcf_sample_genotype_data.has_key(samples[j]):
+                  if samples[j] in vcf_sample_genotype_data:
                      vcf_sample_genotype_data[samples[j]][format_tag] = d
                else:
-                  d = str(sample_dat[j][0])
-                  if vcf_sample_genotype_data.has_key(samples[j]):
+                  d = '.'
+                  if column_types[format_tag] == 'String':
+                     d = str(sample_dat[j])
+                  if column_types[format_tag] == 'Integer':
+                     d = str(sample_dat[j][0])
+                  if samples[j] in vcf_sample_genotype_data:
                      vcf_sample_genotype_data[samples[j]][format_tag] = d
                j = j + 1
       
@@ -214,6 +230,10 @@ def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejecte
             out.write('\t'.join(line_elements) + '\n')
        
    out.close()
+   
+   if compress is True:
+      command = 'gzip -f ' + str(out_tsv)
+      check_subprocess(command)
 
 if __name__=="__main__": __main__()
 
