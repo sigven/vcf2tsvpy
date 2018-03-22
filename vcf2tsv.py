@@ -6,6 +6,8 @@ import numpy as np
 import re
 import subprocess
 
+version = '0.3.1'
+
 
 def __main__():
    parser = argparse.ArgumentParser(description='Convert a VCF file with genomic variants to a file with tab-separated values (TSV). One entry (TSV line) per sample genotype', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -14,10 +16,11 @@ def __main__():
    parser.add_argument("--skip_info_data",action = "store_true", help="Skip printing of data in INFO column")
    parser.add_argument("--skip_genotype_data", action="store_true", help="Skip printing of genotype_data (FORMAT columns)")
    parser.add_argument("--keep_rejected_calls", action="store_true", help="Print data for rejected calls")
+   parser.add_argument("--print_data_type_header", action="store_true", help="Print a header line with data types of VCF annotations")
    parser.add_argument("--compress", action="store_true", help="Compress TSV file with gzip")
    args = parser.parse_args()
    
-   vcf2tsv(args.query_vcf, args.out_tsv, args.skip_info_data, args.skip_genotype_data, args.keep_rejected_calls, args.compress)
+   vcf2tsv(args.query_vcf, args.out_tsv, args.skip_info_data, args.skip_genotype_data, args.keep_rejected_calls, args.compress, args.print_data_type_header)
          
 
 def check_subprocess(command):
@@ -30,12 +33,13 @@ def check_subprocess(command):
       exit(0)
 
 
-def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejected_calls, compress):
+def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejected_calls, compress, print_data_type_header):
    
    vcf = VCF(query_vcf, gts012 = True)
    out = open(out_tsv,'w')
    
    fixed_columns_header = ['CHROM','POS','ID','REF','ALT','QUAL','FILTER']
+   fixed_columns_header_type = ['String','Integer','String','String','String','Float','String']
    samples = vcf.samples
    info_columns_header = []
    format_columns_header = []
@@ -75,8 +79,20 @@ def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejecte
             header_line = '\t'.join(fixed_columns_header) + '\t' + '\t'.join(sample_columns_header) + '\t' + '\t'.join(sorted(format_columns_header)) + '\tGT'
          else:
             header_line = '\t'.join(fixed_columns_header)
-
-   out.write(str(header_line) + '\n')
+            
+   out.write('#https://github.com/sigven/vcf2tsv versison=' + str(version) + '\n')
+   if print_data_type_header is True:
+      header_tags = header_line.rstrip().split('\t')
+      header_types = []
+      for h in header_tags:
+         if h in column_types:
+            header_types.append(str(column_types[h]))
+      header_line_type = '\t'.join(fixed_columns_header_type) + '\t' + '\t'.join(header_types)
+      out.write('#' + str(header_line_type) + '\n')
+      out.write(str(header_line) + '\n')
+   else:
+      out.write(str(header_line) + '\n')
+   
    for rec in vcf:
       rec_id = '.'
       rec_qual = '.'
