@@ -80,7 +80,7 @@ def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejecte
          else:
             header_line = '\t'.join(fixed_columns_header)
             
-   out.write('#https://github.com/sigven/vcf2tsv versison=' + str(version) + '\n')
+   out.write('#https://github.com/sigven/vcf2tsv version=' + str(version) + '\n')
    if print_data_type_header is True:
       header_tags = header_line.rstrip().split('\t')
       header_types = []
@@ -129,8 +129,13 @@ def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejecte
                      vcf_info_data.append('.')
                   else:
                      if column_types[info_field] == 'Float':
-                        val = str("{0:.7f}".format(variant_info.get(info_field)))
-                        vcf_info_data.append(val)
+                        if not isinstance(variant_info.get(info_field),float):
+                           if not ',' in str(alt):
+                              print('Warning: Multiple values in INFO tag for single ALT allele (VCF multiallelic sites not decomposed properly?):' + str(fixed_fields_string) + '\t' + str(info_field) + '=' + str(variant_info.get(info_field)))
+                           vcf_info_data.append('.')
+                        else:
+                           val = str("{0:.7f}".format(variant_info.get(info_field)))
+                           vcf_info_data.append(val)
                      else:
                         if column_types[info_field] == 'String':
                            vcf_info_data.append(str(variant_info.get(info_field)))
