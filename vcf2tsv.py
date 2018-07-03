@@ -6,7 +6,7 @@ import numpy as np
 import re
 import subprocess
 
-version = '0.3.1'
+version = '0.3.3'
 
 
 def __main__():
