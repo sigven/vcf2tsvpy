@@ -41,3 +41,4 @@ Running vcf2tsv requires Python 3. It also requires that you have [cyvcf2](https
 			    Print a header line with data types of VCF annotations
 			    (default: False)
 	--compress            Compress TSV file with gzip (default: False)
+	--version             show program's version number and exit
