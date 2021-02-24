@@ -9,6 +9,8 @@ A small script that converts genomic variant data encoded in VCF format into a t
 * compress output TSV
 * print data types of VCF columns as a header line
 
+__IMPORTANT__: If you run vcf2tsv with a large multi-sample VCF file, the size of the output TSV will quickly grow large, since there is one line per sample genotype in the output by default. Turn on `--skip_genotype_data` if you are primarily interested in the variant INFO elements, filesize of output will also be considerably smaller.
+
 ## Installation
 
 Running vcf2tsv requires Python 3. It also requires that you have [cyvcf2](https://github.com/brentp/cyvcf2) and [numpy](https://scipy.org/install.html) installed. This can be achieved through the use of [pip](https://pip.pypa.io/en/stable).
