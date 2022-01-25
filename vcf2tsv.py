@@ -7,7 +7,7 @@ import re
 import math
 import subprocess
 
-version = '0.3.5'
+version = '0.3.6'
 
 
 def __main__():
@@ -115,7 +115,7 @@ def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejecte
       rec_filter = str(rec.FILTER)
       if rec.FILTER is None:
          rec_filter = 'PASS'
-     
+      
       pos = int(rec.start) + 1
       fixed_fields_string = str(rec.CHROM) + '\t' + str(pos) + '\t' + str(rec_id) + '\t' + str(rec.REF) + '\t' + str(alt) + '\t' + str(rec_qual) + '\t' + str(rec_filter)
       
@@ -169,6 +169,7 @@ def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejecte
       #print(str(vcf_info_data))
       #dictionary, with sample names as keys, values being genotype data (dictionary with format tags as keys)
       vcf_sample_genotype_data = {}
+
       if len(samples) > 0 and skip_genotype_data is False:
          gt_cyvcf = rec.gt_types
          i = 0
@@ -212,11 +213,13 @@ def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejecte
                      d = str(sample_dat[j])
                   if column_types[format_tag] == 'Integer':
                      d = str(sample_dat[j][0])
+                  ## undefined/missing value
+                  if d == '-2147483648':
+                     d = '.'
                   if samples[j] in vcf_sample_genotype_data:
                      vcf_sample_genotype_data[samples[j]][format_tag] = d
                j = j + 1
       
-      #print(str(vcf_sample_genotype_data))
       tsv_elements = []
       tsv_elements.append(fixed_fields_string)
       if skip_info_data is False:
