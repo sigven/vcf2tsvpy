@@ -205,6 +205,8 @@ def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejecte
                   ## undefined/missing value
                   if '-2147483648' in d:
                      d = d.replace('-2147483648', '.')
+                  if 'nan' in d.casefold():
+                     d = d.casefold().replace('nan', '.')
                   if samples[j] in vcf_sample_genotype_data:
                      vcf_sample_genotype_data[samples[j]][format_tag] = d
                else:
@@ -217,7 +219,7 @@ def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejecte
                   if column_types[format_tag] == 'Integer':
                      d = str(sample_dat[j][0])
                   ## undefined/missing value
-                  if d == '-2147483648':
+                  if d == '-2147483648' or d.casefold() == 'nan':
                      d = '.'
                   if samples[j] in vcf_sample_genotype_data:
                      vcf_sample_genotype_data[samples[j]][format_tag] = d
