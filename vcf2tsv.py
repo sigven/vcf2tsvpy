@@ -202,6 +202,9 @@ def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejecte
             while j < dim[0]:
                if sample_dat[j].size > 1:
                   d = ','.join(str(e) for e in np.ndarray.tolist(sample_dat[j]))
+                  ## undefined/missing value
+                  if '-2147483648' in d:
+                     d = d.replace('-2147483648', '.')
                   if samples[j] in vcf_sample_genotype_data:
                      vcf_sample_genotype_data[samples[j]][format_tag] = d
                else:
