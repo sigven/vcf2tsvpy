@@ -7,7 +7,7 @@ import re
 import math
 import subprocess
 
-version = '0.3.6'
+version = '0.3.7.1'
 
 
 def __main__():
@@ -201,7 +201,10 @@ def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejecte
             ## sample-wise
             while j < dim[0]:
                if sample_dat[j].size > 1:
+
                   d = ','.join(str(e) for e in np.ndarray.tolist(sample_dat[j]))
+                  if column_types[format_tag] == 'Float':
+                     d = ','.join(str(round(e, 4)) for e in np.ndarray.tolist(sample_dat[j]))
                   ## undefined/missing value
                   if '-2147483648' in d:
                      d = d.replace('-2147483648', '.')
