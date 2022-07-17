@@ -2,7 +2,7 @@
 
 package:
   name: vcf2tsv
-  version: {{ data.get('version') }}
+  version: version: {{ data.get('version') }}
 
 source:
   path: ../..
@@ -27,3 +27,8 @@ requirements:
 test:
   commands:
     - vcf2tsv --version
+
+about:
+  home: {{ data.get('url') }}
+  license: {{ data.get('license') }}
+  summary: {{ data.get('description') }}
