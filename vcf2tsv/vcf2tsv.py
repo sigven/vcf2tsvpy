@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-import argparse
-from cyvcf2 import VCF, Writer
+from cyvcf2 import VCF
 import numpy as np
 import re
 import logging
@@ -11,7 +10,7 @@ import os
 import sys
 import errno
 from vcf2tsv._version import __version__
-
+import argparse
 from argparse import RawTextHelpFormatter
 
 def cli():
@@ -27,7 +26,6 @@ def cli():
    required_args = parser.add_argument_group("Required arguments")
    optional_args = parser.add_argument_group("Optional arguments")
    parser.add_argument_group(required_args)
-   #parser = argparse.ArgumentParser(description='Convert a VCF file with genomic variants to a file with tab-separated values (TSV). One entry (TSV line) per sample genotype', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
    required_args.add_argument('--input_vcf', help='Bgzipped input VCF file with input variants (SNVs/InDels)')
    required_args.add_argument('--out_tsv', help='Output TSV file with one line per non-rejected sample genotype (variant, genotype and annotation data as tab-separated values)')
    optional_args.add_argument("--skip_info_data",action = "store_true", help="Skip output of data in INFO column")
@@ -43,8 +41,7 @@ def cli():
    logger = getlogger("vcf2tsv")
 
    check_args(arg_dict, logger)
-   
-   run_vcf2tsv(args.input_vcf, args.out_tsv, args.skip_info_data, args.skip_genotype_data, args.keep_rejected_calls, args.compress, args.print_data_type_header, logger)
+   run_vcf2tsv(arg_dict, logger)
          
 
 def getlogger(logger_name):
@@ -75,11 +72,11 @@ def check_args(arg_dict, logger):
 
     # Check the existence of required arguments
     if arg_dict['input_vcf'] is None or not os.path.exists(arg_dict['input_vcf']):
-        err_msg = f"Required argument '--input_vcf' does not exist ({arg_dict['input_vcf']}). Type './vcf2tsv.py -h' to see required arguments and optional ones."
+        err_msg = f"Required argument '--input_vcf' does not exist ({arg_dict['input_vcf']}). Type 'vcf2tsv -h' to see required arguments and optional ones."
         error_message(err_msg, logger)
 
     if arg_dict['out_tsv'] is None:
-        err_msg = f"Required argument '--out_tsv' has no/undefined value ({arg_dict['out_tsv']}). Type './vcf2tsv.py -h' to see required arguments and optional ones."
+        err_msg = f"Required argument '--out_tsv' has no/undefined value ({arg_dict['out_tsv']}). Type 'vcf2tsv -h' to see required arguments and optional ones."
         error_message(err_msg, logger)
 
 
@@ -93,12 +90,12 @@ def check_subprocess(command):
       exit(0)
 
 
-def run_vcf2tsv(query_vcf, out_tsv, arg_dict, logger):
+def run_vcf2tsv(arg_dict, logger):
    
-   vcf = VCF(query_vcf, gts012 = True)
+   vcf = VCF(arg_dict['query_vcf'], gts012 = True)
    
    try:
-      with open(out_tsv, 'w') as ofile:
+      with open(arg_dict['out_tsv'], 'w') as ofile:
         ofile.write('#https://github.com/sigven/vcf2tsv version=' + str(__version__) + '\n')
         #file.close()
    except IOError as error: 
@@ -155,16 +152,12 @@ def run_vcf2tsv(query_vcf, out_tsv, arg_dict, logger):
             header_tags = fixed_columns_header
    header_line = '\t'.join(header_tags)
    
-   out = open(out_tsv,'a')
-
-   #ofile.write('#https://github.com/sigven/vcf2tsv version=' + str(version) + '\n')
    if arg_dict['print_data_type_header'] is True:
       #header_tags = header_line.rstrip().split('\t')
       header_types = []
       for h in header_tags:
          if h in column_types:
             header_types.append(str(column_types[h]))
-      #header_line_type = '\t'.join(fixed_columns_header_type) + '\t' + '\t'.join(header_types)
       header_line_type = '\t'.join(fixed_columns_header_type + header_types)
       ofile.write('#' + str(header_line_type) + '\n')
       ofile.write(str(header_line) + '\n')
@@ -365,10 +358,8 @@ def run_vcf2tsv(query_vcf, out_tsv, arg_dict, logger):
    ofile.close()
    
    if arg_dict['compress'] is True:
-      command = 'gzip -f ' + str(out_tsv)
+      command = 'gzip -f ' + str(arg_dict['out_tsv'])
       check_subprocess(command)
 
 if __name__ == "__main__":
     cli()
-
-   
