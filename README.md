@@ -17,11 +17,11 @@ __IMPORTANT__: If you run vcf2tsv with a large multi-sample VCF file, the size o
 
 ## Usage:
 
-usage:
-	vcf2tsv
-	--input_vcf <INPUT_VCF>
-	--out_tsv <OUTPUT_TSV>
-	-h [options]
+	usage:
+		vcf2tsv
+		--input_vcf <INPUT_VCF>
+		--out_tsv <OUTPUT_TSV>
+		-h [options]
 
 	vcf2tsv: Convert a VCF (Variant Call Format) file with genomic variants to a file with tab-separated values (TSV). One entry (TSV line) per sample genotype.
 
