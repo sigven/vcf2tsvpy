@@ -354,8 +354,8 @@ def run_vcf2tsv(arg_dict, logger):
    ofile.close()
    
    if arg_dict['compress'] is True:
-      command = 'gzip -f ' + str(arg_dict['out_tsv'])
-      check_subprocess(command)
+      gzip_command = f'gzip -f {arg_dict["out_tsv"]}'
+      check_subprocess(gzip_command)
 
 if __name__ == "__main__":
     cli()
