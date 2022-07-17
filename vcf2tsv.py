@@ -1,29 +1,88 @@
 #!/usr/bin/env python
 
 import argparse
+from distutils.log import warn
 from cyvcf2 import VCF, Writer
 import numpy as np
 import re
+import logging
 import math
 import subprocess
+import os
+import sys
+import errno
+from argparse import RawTextHelpFormatter
 
-version = '0.3.7.1'
 
+version = '0.4.0'
 
-def __main__():
-   parser = argparse.ArgumentParser(description='Convert a VCF file with genomic variants to a file with tab-separated values (TSV). One entry (TSV line) per sample genotype', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-   parser.add_argument('query_vcf', help='Bgzipped input VCF file with query variants (SNVs/InDels)')
-   parser.add_argument('out_tsv', help='Output TSV file with one line pr non-rejected sample genotype (Variant, genotype and annotation data as tab-separated values)')
-   parser.add_argument("--skip_info_data",action = "store_true", help="Skip printing of data in INFO column")
-   parser.add_argument("--skip_genotype_data", action="store_true", help="Skip printing of genotype_data (FORMAT columns)")
-   parser.add_argument("--keep_rejected_calls", action="store_true", help="Print data for rejected calls")
-   parser.add_argument("--print_data_type_header", action="store_true", help="Print a header line with data types of VCF annotations")
-   parser.add_argument("--compress", action="store_true", help="Compress TSV file with gzip")
-   parser.add_argument('--version', action='version', version='%(prog)s ' + str(version))
+def cli():
+
+   program_description = (f'vcf2tsv: Convert a VCF (Variant Call Format) file with genomic variants to a file with tab-separated values (TSV). One entry (TSV line) per sample genotype.')
+   program_options = "\n\t--input_vcf <INPUT_VCF>\n\t--out_tsv <OUTPUT_TSV>\n\t"
+
+   parser = argparse.ArgumentParser(description=program_description,
+                                     formatter_class=RawTextHelpFormatter,
+                                     usage=f'\n\t%(prog)s {program_options}-h [options] \n\n')
+    
+   parser._action_groups.pop()
+   required_args = parser.add_argument_group("Required arguments")
+   optional_args = parser.add_argument_group("Optional arguments")
+   parser.add_argument_group(required_args)
+   #parser = argparse.ArgumentParser(description='Convert a VCF file with genomic variants to a file with tab-separated values (TSV). One entry (TSV line) per sample genotype', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+   required_args.add_argument('--input_vcf', help='Bgzipped input VCF file with input variants (SNVs/InDels)')
+   required_args.add_argument('--out_tsv', help='Output TSV file with one line per non-rejected sample genotype (variant, genotype and annotation data as tab-separated values)')
+   optional_args.add_argument("--skip_info_data",action = "store_true", help="Skip output of data in INFO column")
+   optional_args.add_argument("--skip_genotype_data", action="store_true", help="Skip output of genotype_data (FORMAT columns)")
+   optional_args.add_argument("--keep_rejected_calls", action="store_true", help="Output data also for rejected (non-PASS) calls")
+   optional_args.add_argument("--print_data_type_header", action="store_true", help="Output a header line with data types of VCF annotations")
+   optional_args.add_argument("--compress", action="store_true", help="Compress output TSV file with gzip")
+   optional_args.add_argument('--version', action='version', version='%(prog)s ' + str(version))
    args = parser.parse_args()
+   arg_dict = vars(args)
    
-   vcf2tsv(args.query_vcf, args.out_tsv, args.skip_info_data, args.skip_genotype_data, args.keep_rejected_calls, args.compress, args.print_data_type_header)
+   logger = getlogger("vcf2tsv")
+
+   check_args(arg_dict, logger)
+   
+   run_vcf2tsv(args.input_vcf, args.out_tsv, args.skip_info_data, args.skip_genotype_data, args.keep_rejected_calls, args.compress, args.print_data_type_header, logger)
          
+
+def getlogger(logger_name):
+   logger = logging.getLogger(logger_name)
+   logger.setLevel(logging.DEBUG)
+    # create console handler and set level to debug
+   ch = logging.StreamHandler(sys.stdout)
+   ch.setLevel(logging.DEBUG)
+    # add ch to logger
+   logger.addHandler(ch)
+    # create formatter
+   formatter = logging.Formatter(
+      "%(asctime)s - %(name)s - %(levelname)s - %(message)s", "20%y-%m-%d %H:%M:%S")
+    # add formatter to ch
+   ch.setFormatter(formatter)
+   return logger
+
+def error_message(message, logger):
+   logger.error("")
+   logger.error(message)
+   logger.error("")
+   sys.exit(1)
+
+def warn_message(message, logger):
+   logger.warning(message)
+
+def check_args(arg_dict, logger):
+
+    # Check the existence of required arguments
+    if arg_dict['input_vcf'] is None or not os.path.exists(arg_dict['input_vcf']):
+        err_msg = f"Required argument '--input_vcf' does not exist ({arg_dict['input_vcf']}). Type './vcf2tsv.py -h' to see required arguments and optional ones."
+        error_message(err_msg, logger)
+
+    if arg_dict['out_tsv'] is None:
+        err_msg = f"Required argument '--out_tsv' has no/undefined value ({arg_dict['out_tsv']}). Type './vcf2tsv.py -h' to see required arguments and optional ones."
+        error_message(err_msg, logger)
+
 
 def check_subprocess(command):
    try:
@@ -35,11 +94,25 @@ def check_subprocess(command):
       exit(0)
 
 
-def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejected_calls, compress, print_data_type_header):
+def run_vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejected_calls, compress, print_data_type_header, logger):
    
    vcf = VCF(query_vcf, gts012 = True)
-   out = open(out_tsv,'w')
    
+   try:
+      with open(out_tsv, 'w') as ofile:
+        ofile.write('#https://github.com/sigven/vcf2tsv version=' + str(version) + '\n')
+        #file.close()
+   except IOError as error: 
+      # You could also catch Exception instead of IOError to check for problems but this may be casting too-wide a net
+      # The file was not accessible for some reason
+      # Do something here to alert the user or perform another action instead
+      print(error)
+     # The error itself may include information about why the file write failed
+      if error.errno == errno.EACCES:
+         print('No permission to write to file')
+      elif error.errno == errno.EISDIR:
+         print('Cannot write to file - a directory with that name exists')
+
    fixed_columns_header = ['CHROM','POS','ID','REF','ALT','QUAL','FILTER']
    fixed_columns_header_type = ['String','Integer','String','String','String','Float','String']
    samples = vcf.samples
@@ -67,29 +140,25 @@ def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejecte
                else:
                   gt_present_header = 1
 
-   #header_line = '\t'.join(fixed_columns_header)
    header_tags = fixed_columns_header
    if skip_info_data is False:
-      #header_line = '\t'.join(fixed_columns_header) + '\t' + '\t'.join(sorted(info_columns_header))
       header_tags = fixed_columns_header + sorted(info_columns_header)
       if len(sample_columns_header) > 0:
          if skip_genotype_data is False:
-            #header_line = '\t'.join(fixed_columns_header) + '\t' + '\t'.join(sorted(info_columns_header)) + '\t' + '\t'.join(sample_columns_header) + '\t' + '\t'.join(sorted(format_columns_header)) + '\tGT'
             header_tags = fixed_columns_header + sorted(info_columns_header) + sample_columns_header + sorted(format_columns_header) + ['GT']
          else:
-            #header_line = '\t'.join(fixed_columns_header) + '\t' + '\t'.join(sorted(info_columns_header))
             header_tags = fixed_columns_header + sorted(info_columns_header)
    else:
       if len(sample_columns_header) > 0:
          if skip_genotype_data is False:
-            #header_line = '\t'.join(fixed_columns_header) + '\t' + '\t'.join(sample_columns_header) + '\t' + '\t'.join(sorted(format_columns_header)) + '\tGT'
             header_tags = fixed_columns_header + sample_columns_header + sorted(format_columns_header) + ['GT']
          else:
-            #header_line = '\t'.join(fixed_columns_header)
             header_tags = fixed_columns_header
    header_line = '\t'.join(header_tags)
    
-   out.write('#https://github.com/sigven/vcf2tsv version=' + str(version) + '\n')
+   out = open(out_tsv,'a')
+
+   #ofile.write('#https://github.com/sigven/vcf2tsv version=' + str(version) + '\n')
    if print_data_type_header is True:
       #header_tags = header_line.rstrip().split('\t')
       header_types = []
@@ -98,10 +167,10 @@ def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejecte
             header_types.append(str(column_types[h]))
       #header_line_type = '\t'.join(fixed_columns_header_type) + '\t' + '\t'.join(header_types)
       header_line_type = '\t'.join(fixed_columns_header_type + header_types)
-      out.write('#' + str(header_line_type) + '\n')
-      out.write(str(header_line) + '\n')
+      ofile.write('#' + str(header_line_type) + '\n')
+      ofile.write(str(header_line) + '\n')
    else:
-      out.write(str(header_line) + '\n')
+      ofile.write(str(header_line) + '\n')
    
    for rec in vcf:
       rec_id = '.'
@@ -117,9 +186,9 @@ def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejecte
          rec_filter = 'PASS'
       
       pos = int(rec.start) + 1
-      fixed_fields_string = str(rec.CHROM) + '\t' + str(pos) + '\t' + str(rec_id) + '\t' + str(rec.REF) + '\t' + str(alt) + '\t' + str(rec_qual) + '\t' + str(rec_filter)
-      
-      
+      fixed_fields_string = f'{rec.CHROM}\t{pos}\t{rec_id}\t{rec.REF}\t{alt}\t{rec_qual}\t{rec_filter}'
+      #fixed_fields_string = str(rec.CHROM) + '\t' + str(pos) + '\t' + str(rec_id) + '\t' + str(rec.REF) + '\t' + str(alt) + '\t' + str(rec_qual) + '\t' + str(rec_filter)
+            
       if not 'PASS' in rec_filter and not keep_rejected_calls:
          continue
       
@@ -141,9 +210,13 @@ def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejecte
                   else:
                      if column_types[info_field] == 'Float':
                         if not isinstance(variant_info.get(info_field),float):
-                           print('vcf2tsv.py WARNING:\tINFO tag ' + str(info_field) + ' is defined in the VCF header as type \'Float\', yet parsed as other type:' + str(type(variant_info.get(info_field))))
+                           warn_msg = f'INFO tag {info_field} is defined in the VCF header as type \'Float\', yet parsed as other type: {type(variant_info.get(info_field))}'
+                           warn_message(warn_msg, logger)
+                           #print('vcf2tsv.py WARNING:\tINFO tag ' + str(info_field) + ' is defined in the VCF header as type \'Float\', yet parsed as other type:' + str(type(variant_info.get(info_field))))
                            if not ',' in str(alt):
-                              print('Warning: Multiple values in INFO tag for single ALT allele (VCF multiallelic sites not decomposed properly?):' + str(fixed_fields_string) + '\t' + str(info_field) + '=' + str(variant_info.get(info_field)))
+                              warn_msg = f'Warning: Multiple values in INFO tag for single ALT allele (VCF multiallelic sites not decomposed properly?): {fixed_fields_string}\t{info_field}\t{variant_info.get(info_field)}'
+                              #print('Warning: Multiple values in INFO tag for single ALT allele (VCF multiallelic sites not decomposed properly?):' + str(fixed_fields_string) + '\t' + str(info_field) + '=' + str(variant_info.get(info_field)))
+                              warn_message(warn_msg, logger)
                            vcf_info_data.append('.')
                         else:
                            val = str("{0:.7f}".format(variant_info.get(info_field)))
@@ -156,7 +229,9 @@ def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejecte
                            else:
                               vcf_info_data.append('.')
                               if column_types[info_field] == 'String':
-                                    print('vcf2tsv.py WARNING:\tINFO tag ' + str(info_field) + ' is defined in the VCF header as type \'String\', yet parsed as other type:' + str(type(variant_info.get(info_field))))
+                                    warn_msg = f'INFO tag {info_field} is defined in the VCF header as type \'String\', yet parsed as other type: {type(variant_info.get(info_field))}'
+                                    warn_message(warn_msg, logger)
+                                    #print('vcf2tsv.py WARNING:\tINFO tag ' + str(info_field) + ' is defined in the VCF header as type \'String\', yet parsed as other type:' + str(type(variant_info.get(info_field))))
                               if column_types[info_field] == 'Character':
                                     print('vcf2tsv.py WARNING:\tINFO tag ' + str(info_field) + ' is defined in the VCF header as type \'Character\', yet parsed as other type:' + str(type(variant_info.get(info_field))))
                         else:
@@ -249,20 +324,20 @@ def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejecte
                   line_elements.append(gt_tag)
                   if gt_tag == './.' or gt_tag == '.':
                      if keep_rejected_calls:
-                        out.write('\t'.join(line_elements) + '\n')
+                        ofile.write('\t'.join(line_elements) + '\n')
                   else:
-                     out.write("\t".join(str(n) for n in line_elements) + '\n')
+                     ofile.write("\t".join(str(n) for n in line_elements) + '\n')
                     
             else:
                tsv_elements.append("\t".join(str(n) for n in vcf_info_data))
                line_elements = []
                line_elements.extend(tsv_elements)
-               out.write('\t'.join(line_elements) + '\n')
+               ofile.write('\t'.join(line_elements) + '\n')
          else:
             tsv_elements.append("\t".join(str(n) for n in vcf_info_data))
             line_elements = []
             line_elements.extend(tsv_elements)
-            out.write('\t'.join(line_elements) + '\n')
+            ofile.write('\t'.join(line_elements) + '\n')
       else:
          if skip_genotype_data is False:
             if len(sample_columns_header) > 0:
@@ -281,14 +356,14 @@ def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejecte
                   line_elements.append(gt_tag)
                   if gt_tag == './.' or gt_tag == '.':
                      if keep_rejected_calls:
-                        out.write('\t'.join(line_elements) + '\n')
+                        ofile.write('\t'.join(line_elements) + '\n')
                   else:
-                     out.write('\t'.join(line_elements) + '\n')
+                     ofile.write('\t'.join(line_elements) + '\n')
          else:
             line_elements = []
             line_elements.extend(tsv_elements)
             line_elements = tsv_elements
-            out.write('\t'.join(line_elements) + '\n')
+            ofile.write('\t'.join(line_elements) + '\n')
        
    out.close()
    
@@ -296,7 +371,7 @@ def vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rejecte
       command = 'gzip -f ' + str(out_tsv)
       check_subprocess(command)
 
-if __name__=="__main__": __main__()
-
+if __name__ == "__main__":
+    cli()
 
    
