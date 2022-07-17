@@ -123,32 +123,32 @@ def run_vcf2tsv(arg_dict, logger):
          if header_element['HeaderType'] == 'INFO' or header_element['HeaderType'] == 'FORMAT':
             column_types[header_element['ID']] = header_element['Type']
          if header_element['HeaderType'] == 'INFO':
-            if arg_dict['skip_info_data'] is False:
+            if not arg_dict['skip_info_data']:
                info_columns_header.append(header_element['ID'])
          if header_element['HeaderType'] == 'FORMAT':
-            if len(sample_columns_header) > 0 and arg_dict['skip_genotype_data'] is False:
+            if len(sample_columns_header) > 0 and not arg_dict['skip_genotype_data']:
                if header_element['ID'] != 'GT':
                   format_columns_header.append(header_element['ID'])
                else:
                   gt_present_header = 1
 
    header_tags = fixed_columns_header
-   if arg_dict['skip_info_data'] is False:
+   if not arg_dict['skip_info_data']:
       header_tags = fixed_columns_header + sorted(info_columns_header)
       if len(sample_columns_header) > 0:
-         if arg_dict['skip_genotype_data'] is False:
+         if not arg_dict['skip_genotype_data']:
             header_tags = fixed_columns_header + sorted(info_columns_header) + sample_columns_header + sorted(format_columns_header) + ['GT']
          else:
             header_tags = fixed_columns_header + sorted(info_columns_header)
    else:
       if len(sample_columns_header) > 0:
-         if arg_dict['skip_genotype_data'] is False:
+         if not arg_dict['skip_genotype_data']:
             header_tags = fixed_columns_header + sample_columns_header + sorted(format_columns_header) + ['GT']
          else:
             header_tags = fixed_columns_header
    header_line = '\t'.join(header_tags)
    
-   if arg_dict['print_data_type_header'] is True:
+   if arg_dict['print_data_type_header']:
       #header_tags = header_line.rstrip().split('\t')
       header_types = []
       for h in header_tags:
@@ -182,7 +182,7 @@ def run_vcf2tsv(arg_dict, logger):
       
       variant_info = rec.INFO
       vcf_info_data = []
-      if arg_dict['skip_info_data'] is False:
+      if not arg_dict['skip_info_data']:
          for info_field in sorted(info_columns_header):
             if column_types[info_field] == 'Flag':
                if variant_info.get(info_field) is None:
@@ -231,7 +231,7 @@ def run_vcf2tsv(arg_dict, logger):
       #dictionary, with sample names as keys, values being genotype data (dictionary with format tags as keys)
       vcf_sample_genotype_data = {}
 
-      if len(samples) > 0 and arg_dict['skip_genotype_data'] is False:
+      if len(samples) > 0 and not arg_dict['skip_genotype_data']:
          gt_cyvcf = rec.gt_types
          i = 0
          while i < len(samples):
@@ -248,7 +248,7 @@ def run_vcf2tsv(arg_dict, logger):
             i = i + 1
                
       for format_tag in sorted(format_columns_header):
-         if len(samples) > 0 and arg_dict['skip_genotype_data'] is False:
+         if len(samples) > 0 and not arg_dict['skip_genotype_data']:
             sample_dat = rec.format(format_tag)
             if sample_dat is None:
                k = 0
@@ -291,8 +291,8 @@ def run_vcf2tsv(arg_dict, logger):
       
       tsv_elements = []
       tsv_elements.append(fixed_fields_string)
-      if arg_dict['skip_info_data'] is False:
-         if arg_dict['skip_genotype_data'] is False:
+      if not arg_dict['skip_info_data']:
+         if not arg_dict['skip_genotype_data']:
             if len(sample_columns_header) > 0:
                tsv_elements.append("\t".join(str(n) for n in vcf_info_data))
                ## one line per sample variant
@@ -325,7 +325,7 @@ def run_vcf2tsv(arg_dict, logger):
             line_elements.extend(tsv_elements)
             ofile.write('\t'.join(line_elements) + '\n')
       else:
-         if arg_dict['skip_genotype_data'] is False:
+         if not arg_dict['skip_genotype_data']:
             if len(sample_columns_header) > 0:
                ## one line per sample variant
                for s in sorted(vcf_sample_genotype_data.keys()):
@@ -353,7 +353,7 @@ def run_vcf2tsv(arg_dict, logger):
        
    ofile.close()
    
-   if arg_dict['compress'] is True:
+   if arg_dict['compress']:
       gzip_command = f'gzip -f {arg_dict["out_tsv"]}'
       check_subprocess(gzip_command)
 
