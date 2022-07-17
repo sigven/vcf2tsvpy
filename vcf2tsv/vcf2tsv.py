@@ -25,7 +25,6 @@ def cli():
    parser._action_groups.pop()
    required_args = parser.add_argument_group("Required arguments")
    optional_args = parser.add_argument_group("Optional arguments")
-   parser.add_argument_group(required_args)
    required_args.add_argument('--input_vcf', help='Bgzipped input VCF file with input variants (SNVs/InDels)')
    required_args.add_argument('--out_tsv', help='Output TSV file with one line per non-rejected sample genotype (variant, genotype and annotation data as tab-separated values)')
    optional_args.add_argument("--skip_info_data",action = "store_true", help="Skip output of data in INFO column")
@@ -99,11 +98,8 @@ def run_vcf2tsv(arg_dict, logger):
         ofile.write('#https://github.com/sigven/vcf2tsv version=' + str(__version__) + '\n')
         #file.close()
    except IOError as error: 
-      # You could also catch Exception instead of IOError to check for problems but this may be casting too-wide a net
-      # The file was not accessible for some reason
-      # Do something here to alert the user or perform another action instead
       print(error)
-     # The error itself may include information about why the file write failed
+      # The error itself may include information about why the file write failed
       if error.errno == errno.EACCES:
          print('No permission to write to file')
       elif error.errno == errno.EISDIR:
