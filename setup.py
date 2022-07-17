@@ -5,7 +5,7 @@ setuptools.setup(
     version='0.3.7.1', # versioned by bump2version
     license='MIT',
     author='Sigve Nakken',
-    author_email='sigven@gmail.com',
+    author_email='sigven@ifi.uio.no',
     description='vcf2tsv - conversion of Variant Call Format (VCF) to TSV',
     url='https://github.com/sigven/vcf2tsv',
     packages=setuptools.find_packages(),
