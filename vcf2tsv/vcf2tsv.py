@@ -14,9 +14,6 @@ from vcf2tsv._version import __version__
 
 from argparse import RawTextHelpFormatter
 
-
-version = '0.4.0'
-
 def cli():
 
    program_description = (f'vcf2tsv: Convert a VCF (Variant Call Format) file with genomic variants to a file with tab-separated values (TSV). One entry (TSV line) per sample genotype.')
@@ -102,7 +99,7 @@ def run_vcf2tsv(query_vcf, out_tsv, arg_dict, logger):
    
    try:
       with open(out_tsv, 'w') as ofile:
-        ofile.write('#https://github.com/sigven/vcf2tsv version=' + str(version) + '\n')
+        ofile.write('#https://github.com/sigven/vcf2tsv version=' + str(__version__) + '\n')
         #file.close()
    except IOError as error: 
       # You could also catch Exception instead of IOError to check for problems but this may be casting too-wide a net
