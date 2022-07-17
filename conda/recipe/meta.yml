@@ -2,7 +2,8 @@
 
 package:
   name: vcf2tsv
-  version: {{ data.get('version') }}
+  version: 0.3.7.1
+  #version: {{ data.get('version') }}
 
 source:
   path: ../..

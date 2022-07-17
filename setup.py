@@ -10,8 +10,6 @@ setuptools.setup(
     url='https://github.com/sigven/vcf2tsv',
     packages=setuptools.find_packages(),
     entry_points={
-        'console_scripts': [
-            'vcf2tsv = vcf2tsv.vcf2tsv:cli'
-        ]
+        'console_scripts': 'vcf2tsv = vcf2tsv.vcf2tsv:cli'
     }
 )
