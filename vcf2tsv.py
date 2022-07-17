@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import argparse
-from distutils.log import warn
 from cyvcf2 import VCF, Writer
 import numpy as np
 import re
@@ -209,13 +208,11 @@ def run_vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rej
                      vcf_info_data.append('.')
                   else:
                      if column_types[info_field] == 'Float':
-                        if not isinstance(variant_info.get(info_field),float):
+                        if not isinstance(variant_info.get(info_field), float):
                            warn_msg = f'INFO tag {info_field} is defined in the VCF header as type \'Float\', yet parsed as other type: {type(variant_info.get(info_field))}'
                            warn_message(warn_msg, logger)
-                           #print('vcf2tsv.py WARNING:\tINFO tag ' + str(info_field) + ' is defined in the VCF header as type \'Float\', yet parsed as other type:' + str(type(variant_info.get(info_field))))
                            if not ',' in str(alt):
-                              warn_msg = f'Warning: Multiple values in INFO tag for single ALT allele (VCF multiallelic sites not decomposed properly?): {fixed_fields_string}\t{info_field}\t{variant_info.get(info_field)}'
-                              #print('Warning: Multiple values in INFO tag for single ALT allele (VCF multiallelic sites not decomposed properly?):' + str(fixed_fields_string) + '\t' + str(info_field) + '=' + str(variant_info.get(info_field)))
+                              warn_msg = f'Multiple values in INFO tag for single ALT allele (VCF multiallelic sites not decomposed properly?): {fixed_fields_string}\t{info_field}\t{variant_info.get(info_field)}'
                               warn_message(warn_msg, logger)
                            vcf_info_data.append('.')
                         else:
@@ -223,25 +220,25 @@ def run_vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rej
                            vcf_info_data.append(val)
                      else:
                         if column_types[info_field] == 'String' or column_types[info_field] == 'Character':
-                           if isinstance(variant_info.get(info_field),str):
-                              #print(str(info_field) + '\t' + variant_info.get(info_field).encode('ascii','ignore').rstrip().decode('ascii'))
+                           if isinstance(variant_info.get(info_field), str):
                               vcf_info_data.append(variant_info.get(info_field).encode('ascii','ignore').decode('ascii'))
                            else:
                               vcf_info_data.append('.')
                               if column_types[info_field] == 'String':
                                     warn_msg = f'INFO tag {info_field} is defined in the VCF header as type \'String\', yet parsed as other type: {type(variant_info.get(info_field))}'
                                     warn_message(warn_msg, logger)
-                                    #print('vcf2tsv.py WARNING:\tINFO tag ' + str(info_field) + ' is defined in the VCF header as type \'String\', yet parsed as other type:' + str(type(variant_info.get(info_field))))
                               if column_types[info_field] == 'Character':
-                                    print('vcf2tsv.py WARNING:\tINFO tag ' + str(info_field) + ' is defined in the VCF header as type \'Character\', yet parsed as other type:' + str(type(variant_info.get(info_field))))
+                                    warn_msg = f'INFO tag {info_field} is defined in the VCF header as type \'Character\', yet parsed as other type: {type(variant_info.get(info_field))}'
+                                    warn_message(warn_msg, logger)
                         else:
-                           if isinstance(variant_info.get(info_field),int):
+                           if isinstance(variant_info.get(info_field), int):
                               vcf_info_data.append(str(variant_info.get(info_field)))
                            else:
-                              print('vcf2tsv.py WARNING:\tINFO tag ' + str(info_field) + ' is defined in the VCF header as type \'Integer\', yet parsed as other type:' + str(type(variant_info.get(info_field))))
+                              warn_msg = f'INFO tag {info_field} is defined in the VCF header as type \'Integer\', yet parsed as other type: {type(variant_info.get(info_field))}'
+                              warn_message(warn_msg, logger)
                               vcf_info_data.append(re.sub(r'\(|\)', '', variant_info.get(info_field).encode('ascii','ignore').decode('ascii')))
 
-      #print(str(vcf_info_data))
+      
       #dictionary, with sample names as keys, values being genotype data (dictionary with format tags as keys)
       vcf_sample_genotype_data = {}
 
@@ -365,7 +362,7 @@ def run_vcf2tsv(query_vcf, out_tsv, skip_info_data, skip_genotype_data, keep_rej
             line_elements = tsv_elements
             ofile.write('\t'.join(line_elements) + '\n')
        
-   out.close()
+   ofile.close()
    
    if compress is True:
       command = 'gzip -f ' + str(out_tsv)
