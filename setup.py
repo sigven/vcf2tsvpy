@@ -11,7 +11,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     entry_points={
         'console_scripts': [
-            'vcf2tsv = vcf2tsv.main:cli'
+            'vcf2tsv = vcf2tsv.vcf2tsv:cli'
         ]
     }
 )
