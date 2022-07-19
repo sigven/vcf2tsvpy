@@ -1,46 +1,43 @@
-# Genomic VCF to tab-separated values
-__Python script for conversion of VCF data to tab-separated values (TSV)__
+# vcf2tsv: genomic VCF to tab-separated values (TSV)
 
-A small script that converts genomic variant data encoded in VCF format into a tab-separated values file. The script utilizes [brentp/cyvcf2](https://github.com/brentp/cyvcf2) to parse the VCF file. By default, the program prints the fixed VCF columns, all INFO tag values (as defined in the VCF header, INFO tags not present in a given record is appended with a '.'), and all genotype data (FORMAT columns) for heterozygotes and homozygotes. If genotype data is present, it prints one line per sample, and a column denoted VCF\_SAMPLE_ID indicates data for a given sample. The script has optional arguments to
+A small Python program that converts genomic variant data encoded in [VCF format](https://samtools.github.io/hts-specs/VCFv4.2.pdf) into a tab-separated values (TSV) file.
 
-* skip sample genotype data (i.e. FORMAT colums)
-* keep rejected genotypes (i.e. FILTER != 'PASS' / GT == './.')
-* skip INFO data.
+The script utilizes the [cyvcf2](https://github.com/brentp/cyvcf2) library to parse the VCF file. By default, the program prints the fixed VCF columns, all `INFO` tag values (as defined in the VCF header, `INFO` tags not present in a given record is appended with a `'.'`), and all genotype data (FORMAT columns) for heterozygotes and homozygotes. If genotype data is present, it prints one line per sample, and a column denoted `VCF_SAMPLE_ID` indicates data for a given sample. Importantly, the program has optional arguments to
+
+* skip sample genotype data (i.e. `FORMAT` colums) - print only variant information
+* keep rejected genotypes (i.e. `FILTER` != ``'PASS'`` / `GT` == `'./.'`)
+* skip `INFO` data.
 * compress output TSV
 * print data types of VCF columns as a header line
 
-__IMPORTANT__: If you run vcf2tsv with a large multi-sample VCF file, the size of the output TSV will quickly grow large, since there is one line per sample genotype in the output by default. Turn on `--skip_genotype_data` if you are primarily interested in the variant INFO elements, filesize of output will also be considerably smaller.
+<br>
+
+__IMPORTANT__: If you run vcf2tsv with a large multi-sample VCF file, the file size of the output TSV will quickly grow fairly large, since there is, by default, one line per sample genotype in the output. Turn on `--skip_genotype_data` if you are primarily interested in the variant INFO elements, file size of output TSV will also be considerably smaller.
 
 ## Installation
 
-Running vcf2tsv requires Python 3. It also requires that you have [cyvcf2](https://github.com/brentp/cyvcf2) and [numpy](https://scipy.org/install.html) installed. This can be achieved through the use of [pip](https://pip.pypa.io/en/stable).
+The software can be installed with the [Conda](https://docs.conda.io/en/latest/) package manager, using the following command:
 
-## Usage:
+- `conda install -c sigven vcf2tsv`
 
-	usage: vcf2tsv.py [-h] [--skip_info_data] [--skip_genotype_data]
-		   [--keep_rejected_calls] [--print_data_type_header]
-		   [--compress]
-		   query_vcf out_tsv
+## Usage
 
-	Convert a VCF file with genomic variants to a file with tab-separated values
-	(TSV). One entry (TSV line) per sample genotype
 
-	positional arguments:
-	query_vcf             Bgzipped input VCF file with query variants
-			    (SNVs/InDels)
-	out_tsv               Output TSV file with one line pr non-rejected sample
-			    genotype (Variant, genotype and annotation data as
-			    tab-separated values)
+	vcf2tsv --input_vcf <INPUT_VCF> --out_tsv <OUTPUT_TSV>
+		   -h [options]
 
-	optional arguments:
-	-h, --help            show this help message and exit
-	--skip_info_data      Skip printing of data in INFO column (default: False)
-	--skip_genotype_data  Skip printing of genotype_data (FORMAT columns)
-			    (default: False)
-	--keep_rejected_calls
-			    Print data for rejected calls (default: False)
-	--print_data_type_header
-			    Print a header line with data types of VCF annotations
-			    (default: False)
-	--compress            Compress TSV file with gzip (default: False)
-	--version             show program's version number and exit
+	vcf2tsv:  Convert a VCF (Variant Call Format) file with genomic variants to a file with
+			tab-separated values (TSV). One entry (TSV line) per sample genotype.
+
+	Required arguments:
+		--input_vcf INPUT_VCF	Bgzipped input VCF file with input variants (SNVs/InDels)
+		--out_tsv OUT_TSV     	Output TSV file with one line per non-rejected sample genotype
+							(variant, genotype and annotation data as tab-separated values)
+
+	Optional arguments:
+		--skip_info_data      	Skip output of data in INFO column
+		--skip_genotype_data  	Skip output of genotype_data (FORMAT columns)
+		--keep_rejected_calls	Output data also for rejected (non-PASS) calls
+		--print_data_type_header	Output a header line with data types of VCF annotations
+		--compress            	Compress output TSV file with gzip
+		--version             	Show program's version number and exit

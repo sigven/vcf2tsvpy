@@ -1,0 +1,10 @@
+name: condabuild
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - boa
+  - conda-build
+  - conda-lock ==0.13.2
+  - conda-verify
+  - anaconda-client
