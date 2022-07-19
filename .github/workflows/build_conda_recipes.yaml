@@ -11,7 +11,40 @@ env:
   env_yml_path: conda/env/yml
   #env_lock_path: conda/env/lock
   VERSION: '0.4.0' # versioned by bump2version
+
 jobs:
+  create_tag:
+    if: "startsWith(github.event.head_commit.message, 'Bump version:')"
+    name: Create tag
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - name: Code checkout
+        uses: actions/checkout@v3
+      - id: pull_lock_commit
+        name: 📥 Pull lock commit
+        run: |
+            git pull --no-rebase # for pulling in the changed locks
+            git --no-pager log --decorate=short --pretty=oneline -n3
+            LATEST_COMMIT_HASH="$(git --no-pager log -1 --format='%H')"
+            echo "::set-output name=latest_commit_hash::${LATEST_COMMIT_HASH}"
+      - name: 🔖 Tag creation
+        uses: actions/github-script@v5
+        env:
+          LATEST_COMMIT_HASH: ${{ steps.pull_lock_commit.outputs.latest_commit_hash }}
+        with:
+          script: |
+            const the_tag_name = 'refs/tags/v' + process.env.VERSION
+            const the_sha = process.env.LATEST_COMMIT_HASH
+            github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: the_tag_name,
+              sha: the_sha
+            })
+            
   build_conda_pkgs:
     # When merging to one of the branches above and the commit message matches
     if: "startsWith(github.event.head_commit.message, 'Bump version:')"
@@ -37,3 +70,5 @@ jobs:
       - name: Build + upload vcf2tsv conda pkg
         run: |
           conda mambabuild ${recipe_path} -c conda-forge -c bioconda --token ${atoken} --quiet
+          
+  
