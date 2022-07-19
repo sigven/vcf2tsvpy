@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name='vcf2tsv',
-    version='0.3.7', # versioned by bump2version
+    version='0.4.0', # versioned by bump2version
     license='MIT',
     author='Sigve Nakken',
     author_email='sigven@ifi.uio.no',
