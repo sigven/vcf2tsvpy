@@ -67,7 +67,7 @@ jobs:
           activate-environment: condabuild
           environment-file: ${{ env.env_yml_path }}/condabuild.yml
           use-mamba: true
-      - name: Build + upload vcf2tsv conda pkg
+      - name: Build + upload vcf2tsvpy conda pkg
         run: |
           conda mambabuild ${recipe_path} -c conda-forge -c bioconda --token ${atoken} --quiet
           

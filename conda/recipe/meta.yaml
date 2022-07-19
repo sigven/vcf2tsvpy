@@ -1,7 +1,7 @@
 {% set data = load_setup_py_data() %}
 
 package:
-  name: vcf2tsv
+  name: vcf2tsvpy
   version: {{ data.get('version') }}
 
 source:
@@ -25,7 +25,7 @@ requirements:
 
 test:
   commands:
-    - vcf2tsv --version
+    - vcf2tsvpy --version
 
 about:
   home: {{ data.get('url') }}

@@ -9,7 +9,7 @@ import subprocess
 import os
 import sys
 import errno
-from vcf2tsv._version import __version__
+from vcf2tsvpy._version import __version__
 import argparse
 from argparse import RawTextHelpFormatter
 
@@ -17,7 +17,7 @@ from argparse import RawTextHelpFormatter
 def cli():
 
     program_description = (
-        f'vcf2tsv: Convert a VCF (Variant Call Format) file with genomic variants to a file with tab-separated values (TSV). One entry (TSV line) per sample genotype.')
+        f'vcf2tsvpy: Convert a VCF (Variant Call Format) file with genomic variants to a file with tab-separated values (TSV). One entry (TSV line) per sample genotype.')
     program_options = "\n\t--input_vcf <INPUT_VCF>\n\t--out_tsv <OUTPUT_TSV>\n\t"
 
     parser = argparse.ArgumentParser(description=program_description,
@@ -47,7 +47,7 @@ def cli():
     arg_dict = vars(args)
     # print(arg_dict)
 
-    logger = getlogger("vcf2tsv")
+    logger = getlogger("vcf2tsvpy")
 
     check_args(arg_dict, logger)
     run_vcf2tsv(arg_dict, logger)
@@ -84,11 +84,11 @@ def check_args(arg_dict, logger):
 
     # Check the existence of required arguments
     if arg_dict['input_vcf'] is None or not os.path.exists(arg_dict['input_vcf']):
-        err_msg = f"Required argument '--input_vcf' does not exist ({arg_dict['input_vcf']}). Type 'vcf2tsv -h' to see required arguments and optional ones."
+        err_msg = f"Required argument '--input_vcf' does not exist ({arg_dict['input_vcf']}). Type 'vcf2tsvpy -h' to see required arguments and optional ones."
         error_message(err_msg, logger)
 
     if arg_dict['out_tsv'] is None:
-        err_msg = f"Required argument '--out_tsv' has no/undefined value ({arg_dict['out_tsv']}). Type 'vcf2tsv -h' to see required arguments and optional ones."
+        err_msg = f"Required argument '--out_tsv' has no/undefined value ({arg_dict['out_tsv']}). Type 'vcf2tsvpy -h' to see required arguments and optional ones."
         error_message(err_msg, logger)
 
 
@@ -111,7 +111,7 @@ def run_vcf2tsv(arg_dict, logger):
     try:
         with open(arg_dict['out_tsv'], 'w') as ofile:
             ofile.write(
-                '#https://github.com/sigven/vcf2tsv version=' + str(__version__) + '\n')
+                '#https://github.com/sigven/vcf2tsvpy version=' + str(__version__) + '\n')
 
             fixed_columns_header = ['CHROM', 'POS',
                                     'ID', 'REF', 'ALT', 'QUAL', 'FILTER']
