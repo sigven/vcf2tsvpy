@@ -16,14 +16,9 @@ __IMPORTANT__: If you run vcf2tsv with a large multi-sample VCF file, the file s
 
 ## Installation
 
-**IN PROGRESS**:
-- `conda install vcf2tsv`
+The software can be installed with the [Conda](https://docs.conda.io/en/latest/) package manager, using the following command:
 
-- Info about platforms (OSX/Linux) supported ?
-
-## Example
-
-
+- `conda install -c sigven vcf2tsv`
 
 ## Usage
 
