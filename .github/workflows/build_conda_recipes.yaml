@@ -23,17 +23,14 @@ jobs:
     steps:
       - name: 🔖 Tag creation
         uses: actions/github-script@v5
-        env:
-          LATEST_COMMIT_HASH: ${{ steps.pull_lock_commit.outputs.latest_commit_hash }}
         with:
           script: |
             const the_tag_name = 'refs/tags/v' + process.env.VERSION
-            const the_sha = process.env.LATEST_COMMIT_HASH
             github.rest.git.createRef({
               owner: context.repo.owner,
               repo: context.repo.repo,
               ref: the_tag_name,
-              sha: the_sha
+              sha: context.sha
             })
             
   build_conda_pkgs:
