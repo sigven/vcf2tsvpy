@@ -1,6 +1,6 @@
 # vcf2tsvpy: genomic VCF to tab-separated values (TSV)
 
-[![install with bioconda](https://anaconda.org/sigven/vcf2tsvpy/badges/installer/conda.svg)](https://anaconda.org/sigven/vcf2tsvpy) [![Anaconda-Server Badge](https://anaconda.org/sigven/vcf2tsvpy/badges/latest_release_date.svg)](https://anaconda.org/sigven/vcf2tsvpy)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/vcf2tsvpy/badges/installer/conda.svg)](https://conda.anaconda.org/bioconda) &nbsp;[![Anaconda-Server Badge](https://anaconda.org/bioconda/vcf2tsvpy/badges/latest_release_date.svg)](https://anaconda.org/bioconda/vcf2tsvpy)
 
 A small Python program that converts genomic variant data encoded in [VCF format](https://samtools.github.io/hts-specs/VCFv4.2.pdf) into a tab-separated values (TSV) file.
 
@@ -20,7 +20,7 @@ The program utilizes the [cyvcf2](https://github.com/brentp/cyvcf2) library to p
 
 The software can be installed with the [Conda](https://docs.conda.io/en/latest/) package manager, using the following command:
 
-`conda install -c sigven vcf2tsvpy`
+`conda install -c bioconda vcf2tsvpy`
 
 ## Usage
 
