@@ -21,15 +21,6 @@ jobs:
       run:
         shell: bash -l {0}
     steps:
-      - name: Code checkout
-        uses: actions/checkout@v3
-      - id: pull_lock_commit
-        name: 📥 Pull lock commit
-        run: |
-            git pull --no-rebase # for pulling in the changed locks
-            git --no-pager log --decorate=short --pretty=oneline -n3
-            LATEST_COMMIT_HASH="$(git --no-pager log -1 --format='%H')"
-            echo "::set-output name=latest_commit_hash::${LATEST_COMMIT_HASH}"
       - name: 🔖 Tag creation
         uses: actions/github-script@v5
         env:
