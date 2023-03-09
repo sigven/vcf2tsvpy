@@ -1,6 +1,6 @@
 # vcf2tsvpy: genomic VCF to tab-separated values (TSV)
 
-[![Anaconda-Server Badge](https://anaconda.org/bioconda/vcf2tsvpy/badges/installer/conda.svg)](https://conda.anaconda.org/bioconda) &nbsp;[![Anaconda-Server Badge](https://anaconda.org/bioconda/vcf2tsvpy/badges/latest_release_date.svg)](https://anaconda.org/bioconda/vcf2tsvpy)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/vcf2tsvpy/badges/version.svg)](https://conda.anaconda.org/bioconda) &nbsp;[![Anaconda-Server Badge](https://anaconda.org/bioconda/vcf2tsvpy/badges/latest_release_date.svg)](https://anaconda.org/bioconda/vcf2tsvpy)
 
 A small Python program that converts genomic variant data encoded in [VCF format](https://samtools.github.io/hts-specs/VCFv4.2.pdf) into a tab-separated values (TSV) file.
 
@@ -15,6 +15,11 @@ The program utilizes the [cyvcf2](https://github.com/brentp/cyvcf2) library to p
 <br>
 
 **IMPORTANT**: If you run *vcf2tsvpy* with a large multi-sample VCF file, the file size of the output TSV will quickly grow fairly large, since there is, by default, one line per sample genotype in the output. Turn on `--skip_genotype_data` if you are primarily interested in the variant INFO elements, file size of output TSV will also be considerably smaller.
+
+## News
+
+* March 9th 2023: **0.6.1 release**
+  - Handling of cases where a tag is found __both__ in `INFO` and `FORMAT` columns of VCF (e.g. `DP`). For such cases, the `INFO` tag name is now prepended with a *INFO_* string (e.g. `INFO_DP`), ensuring non-duplicate columns in the final output TSV file.
 
 ## Installation
 

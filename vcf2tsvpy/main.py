@@ -45,7 +45,6 @@ def cli():
         '--version', action='version', version='%(prog)s ' + str(__version__))
     args = parser.parse_args()
     arg_dict = vars(args)
-    # print(arg_dict)
 
     logger = getlogger("vcf2tsvpy")
 
@@ -79,6 +78,8 @@ def error_message(message, logger):
 def warn_message(message, logger):
     logger.warning(message)
 
+def info_message(message, logger):
+    logger.info(message)
 
 def check_args(arg_dict, logger):
 
@@ -117,60 +118,94 @@ def run_vcf2tsv(arg_dict, logger):
                                     'ID', 'REF', 'ALT', 'QUAL', 'FILTER']
             fixed_columns_header_type = ['String', 'Integer',
                                          'String', 'String', 'String', 'Float', 'String']
-            samples = vcf.samples
-            info_columns_header = []
-            format_columns_header = []
-            sample_columns_header = []
-            column_types = {}
+            samples = vcf.samples           
+            vcf_header_tagtypes = {}
+            vcf_header_tagtypes['INFO'] = {}
+            vcf_header_tagtypes['FORMAT'] = {}
+            vcf_header_tags = {}
+            vcf_header_tags['INFO'] = []
+            vcf_header_tags['FORMAT'] = []
+            vcf_header_tags['SAMPLE'] = []
             gt_present_header = 0
+            duplicate_tag = {}
+
+            dup_tag_prefix = "INFO"
 
             if len(samples) > 0:
-                sample_columns_header.append('VCF_SAMPLE_ID')
+                vcf_header_tags['SAMPLE'].append('VCF_SAMPLE_ID')
 
             for e in vcf.header_iter():
                 header_element = e.info()
+
+                ## record INFO/FORMAT types (String, Float etc), and append all INFO/FORMAT elements to 
                 if 'ID' in header_element.keys() and 'HeaderType' in header_element.keys():
                     if header_element['HeaderType'] == 'INFO' or header_element['HeaderType'] == 'FORMAT':
-                        column_types[header_element['ID']
-                                     ] = header_element['Type']
+                        vcf_header_tagtypes[header_element['HeaderType']][header_element['ID']] = header_element['Type']
                     if header_element['HeaderType'] == 'INFO':
                         if not arg_dict['skip_info_data']:
-                            info_columns_header.append(header_element['ID'])
+                            vcf_header_tags['INFO'].append(header_element['ID'])
                     if header_element['HeaderType'] == 'FORMAT':
-                        if len(sample_columns_header) > 0 and not arg_dict['skip_genotype_data']:
+                        if len(vcf_header_tags['SAMPLE']) > 0 and not arg_dict['skip_genotype_data']:
                             if header_element['ID'] != 'GT':
-                                format_columns_header.append(
-                                    header_element['ID'])
+                                vcf_header_tags['FORMAT'].append(header_element['ID'])
                             else:
                                 gt_present_header = 1
 
+            ## check for identical INFO and FORMAT tags, 
+            ## ensure there are no duplicate column names in output TSV by prepending any such INFO tags with 'INFO_'
+            for info_tag in vcf_header_tags['INFO']:
+                for format_tag in vcf_header_tags['FORMAT']:
+                    if info_tag == format_tag and info_tag in vcf_header_tagtypes['INFO']: 
+
+                        #duplicate_tags[info_tag] = 1
+                        revised_info_tag = f'{dup_tag_prefix}_{info_tag}'
+
+                        ## if the 'INFO_DP' already exists as a tag in the input VCF, change to INFO2_DP
+                        if revised_info_tag in vcf_header_tagtypes['INFO']:
+                            revised_info_tag = f'{dup_tag_prefix}2_{info_tag}'
+                            dup_tag_prefix = "INFO2"
+
+                        duplicate_tag[revised_info_tag] = 1
+
+                        warn_message(message = f'Found "{info_tag}" both as INFO and FORMAT tag - renaming INFO tag to "{revised_info_tag}"', logger = logger)                      
+                        ## add new header element and record type
+                        vcf_header_tags['INFO'].append(f'{revised_info_tag}')
+                        vcf_header_tagtypes['INFO'][f'{revised_info_tag}'] = vcf_header_tagtypes['INFO'][info_tag]
+                            
+                        ##remove old tag from info column headers and column type dictionary
+                        vcf_header_tags['INFO'].remove(info_tag)
+                        vcf_header_tagtypes['INFO'].pop(info_tag, None)
+
+            
+            ## make String with header tags (FIXED + INFO + FORMAT)
             header_tags = fixed_columns_header
             if not arg_dict['skip_info_data']:
                 header_tags = fixed_columns_header + \
-                    sorted(info_columns_header)
-                if len(sample_columns_header) > 0:
+                    sorted(vcf_header_tags['INFO'])
+                if len(vcf_header_tags['SAMPLE']) > 0:
                     if not arg_dict['skip_genotype_data']:
                         header_tags = fixed_columns_header + \
-                            sorted(info_columns_header) + sample_columns_header + \
-                            sorted(format_columns_header) + ['GT']
+                            sorted(vcf_header_tags['INFO']) + vcf_header_tags['SAMPLE'] + \
+                            sorted(vcf_header_tags['FORMAT']) + ['GT']
                     else:
                         header_tags = fixed_columns_header + \
-                            sorted(info_columns_header)
+                            sorted(vcf_header_tags['INFO'])
             else:
-                if len(sample_columns_header) > 0:
+                if len(vcf_header_tags['SAMPLE']) > 0:
                     if not arg_dict['skip_genotype_data']:
-                        header_tags = fixed_columns_header + sample_columns_header + \
-                            sorted(format_columns_header) + ['GT']
+                        header_tags = fixed_columns_header + vcf_header_tags['SAMPLE'] + \
+                            sorted(vcf_header_tags['FORMAT']) + ['GT']
                     else:
                         header_tags = fixed_columns_header
             header_line = '\t'.join(header_tags)
 
             if arg_dict['print_data_type_header']:
-                #header_tags = header_line.rstrip().split('\t')
                 header_types = []
                 for h in header_tags:
-                    if h in column_types:
-                        header_types.append(str(column_types[h]))
+                    if h in vcf_header_tagtypes['INFO']:
+                        header_types.append(str(vcf_header_tagtypes['INFO'][h]))
+                    if h in vcf_header_tagtypes['FORMAT']:
+                        header_types.append(str(vcf_header_tagtypes['FORMAT'][h]))
                 header_line_type = '\t'.join(
                     fixed_columns_header_type + header_types)
                 ofile.write('#' + str(header_line_type) + '\n')
@@ -193,7 +228,6 @@ def run_vcf2tsv(arg_dict, logger):
 
                 pos = int(rec.start) + 1
                 fixed_fields_string = f'{rec.CHROM}\t{pos}\t{rec_id}\t{rec.REF}\t{alt}\t{rec_qual}\t{rec_filter}'
-                #fixed_fields_string = str(rec.CHROM) + '\t' + str(pos) + '\t' + str(rec_id) + '\t' + str(rec.REF) + '\t' + str(alt) + '\t' + str(rec_qual) + '\t' + str(rec_filter)
 
                 if not 'PASS' in rec_filter and not arg_dict['keep_rejected_calls']:
                     continue
@@ -201,23 +235,29 @@ def run_vcf2tsv(arg_dict, logger):
                 variant_info = rec.INFO
                 vcf_info_data = []
                 if not arg_dict['skip_info_data']:
-                    for info_field in sorted(info_columns_header):
-                        if column_types[info_field] == 'Flag':
-                            if variant_info.get(info_field) is None:
+                    for info_field in sorted(vcf_header_tags['INFO']):
+
+                        info_field_get = info_field
+                        ## change revised duplicate INFO tag back to its origin in order to get variant data stored in rec.INFO
+                        if info_field in duplicate_tag:
+                            info_field_get = re.sub(r'^' + dup_tag_prefix + '_', '', info_field)
+
+                        if vcf_header_tagtypes['INFO'][info_field] == 'Flag':
+                            if variant_info.get(info_field_get) is None:
                                 vcf_info_data.append('False')
                             else:
                                 vcf_info_data.append('True')
-                        elif column_types[info_field] == 'Float' or column_types[info_field] == 'Integer' or column_types[info_field] == 'String' or column_types[info_field] == 'Character':
-                            if type(variant_info.get(info_field)) is list or type(variant_info.get(info_field)) is tuple:
-                                vcf_info_data.append(",".join(str(n)
-                                                              for n in variant_info.get(info_field)))
+                        elif vcf_header_tagtypes['INFO'][info_field] == 'Float' or vcf_header_tagtypes['INFO'][info_field] == 'Integer' or  \
+                            vcf_header_tagtypes['INFO'][info_field] == 'String' or vcf_header_tagtypes['INFO'][info_field] == 'Character':
+                            if type(variant_info.get(info_field_get)) is list or type(variant_info.get(info_field_get)) is tuple:
+                                vcf_info_data.append(",".join(str(n) for n in variant_info.get(info_field)))
                             else:
-                                if variant_info.get(info_field) is None:
+                                if variant_info.get(info_field_get) is None:
                                     vcf_info_data.append('.')
                                 else:
-                                    if column_types[info_field] == 'Float':
-                                        if not isinstance(variant_info.get(info_field), float):
-                                            warn_msg = f'INFO tag {info_field} is defined in the VCF header as type \'Float\', yet parsed as other type: {type(variant_info.get(info_field))}'
+                                    if vcf_header_tagtypes['INFO'][info_field] == 'Float':
+                                        if not isinstance(variant_info.get(info_field_get), float):
+                                            warn_msg = f'INFO tag {info_field} is defined in the VCF header as type \'Float\', yet parsed as other type: {type(variant_info.get(info_field_get))}'
                                             warn_message(warn_msg, logger)
                                             if not ',' in str(alt):
                                                 warn_msg = f'Multiple values in INFO tag for single ALT allele (VCF multiallelic sites not decomposed properly?): {fixed_fields_string}\t{info_field}\t{variant_info.get(info_field)}'
@@ -225,32 +265,31 @@ def run_vcf2tsv(arg_dict, logger):
                                             vcf_info_data.append('.')
                                         else:
                                             val = str("{0:.7f}".format(
-                                                variant_info.get(info_field)))
+                                                variant_info.get(info_field_get)))
                                             vcf_info_data.append(val)
                                     else:
-                                        if column_types[info_field] == 'String' or column_types[info_field] == 'Character':
-                                            if isinstance(variant_info.get(info_field), str):
-                                                vcf_info_data.append(variant_info.get(info_field).encode(
+                                        if vcf_header_tagtypes['INFO'][info_field] == 'String' or vcf_header_tagtypes['INFO'][info_field] == 'Character':
+                                            if isinstance(variant_info.get(info_field_get), str):
+                                                vcf_info_data.append(variant_info.get(info_field_get).encode(
                                                     'ascii', 'ignore').decode('ascii'))
                                             else:
                                                 vcf_info_data.append('.')
-                                                if column_types[info_field] == 'String':
-                                                    warn_msg = f'INFO tag {info_field} is defined in the VCF header as type \'String\', yet parsed as other type: {type(variant_info.get(info_field))}'
+                                                if vcf_header_tagtypes['INFO'][info_field] == 'String':
+                                                    warn_msg = f'INFO tag {info_field} is defined in the VCF header as type \'String\', yet parsed as other type: {type(variant_info.get(info_field_get))}'
                                                     warn_message(
                                                         warn_msg, logger)
-                                                if column_types[info_field] == 'Character':
-                                                    warn_msg = f'INFO tag {info_field} is defined in the VCF header as type \'Character\', yet parsed as other type: {type(variant_info.get(info_field))}'
+                                                if vcf_header_tagtypes['INFO'][info_field] == 'Character':
+                                                    warn_msg = f'INFO tag {info_field} is defined in the VCF header as type \'Character\', yet parsed as other type: {type(variant_info.get(info_field_get))}'
                                                     warn_message(
                                                         warn_msg, logger)
                                         else:
-                                            if isinstance(variant_info.get(info_field), int):
+                                            if isinstance(variant_info.get(info_field_get), int):
                                                 vcf_info_data.append(
-                                                    str(variant_info.get(info_field)))
+                                                    str(variant_info.get(info_field_get)))
                                             else:
-                                                warn_msg = f'INFO tag {info_field} is defined in the VCF header as type \'Integer\', yet parsed as other type: {type(variant_info.get(info_field))}'
+                                                warn_msg = f'INFO tag {info_field} is defined in the VCF header as type \'Integer\', yet parsed as other type: {type(variant_info.get(info_field_get))}'
                                                 warn_message(warn_msg, logger)
-                                                vcf_info_data.append(re.sub(r'\(|\)', '', variant_info.get(
-                                                    info_field).encode('ascii', 'ignore').decode('ascii')))
+                                                vcf_info_data.append(re.sub(r'\(|\)', '', variant_info.get(info_field_get).encode('ascii', 'ignore').decode('ascii')))
 
                 # dictionary, with sample names as keys, values being genotype data (dictionary with format tags as keys)
                 vcf_sample_genotype_data = {}
@@ -271,15 +310,14 @@ def run_vcf2tsv(arg_dict, logger):
                         vcf_sample_genotype_data[samples[i]]['GT'] = gt
                         i = i + 1
 
-                for format_tag in sorted(format_columns_header):
+                for format_tag in sorted(vcf_header_tags['FORMAT']):
                     if len(samples) > 0 and not arg_dict['skip_genotype_data']:
                         sample_dat = rec.format(format_tag)
                         if sample_dat is None:
                             k = 0
                             while k < len(samples):
                                 if samples[k] in vcf_sample_genotype_data:
-                                    vcf_sample_genotype_data[samples[k]
-                                                             ][format_tag] = '.'
+                                    vcf_sample_genotype_data[samples[k]][format_tag] = '.'
                                 k = k + 1
                             continue
                         dim = sample_dat.shape
@@ -288,11 +326,9 @@ def run_vcf2tsv(arg_dict, logger):
                         while j < dim[0]:
                             if sample_dat[j].size > 1:
 
-                                d = ','.join(str(e)
-                                             for e in np.ndarray.tolist(sample_dat[j]))
-                                if column_types[format_tag] == 'Float':
-                                    d = ','.join(str(round(e, 4))
-                                                 for e in np.ndarray.tolist(sample_dat[j]))
+                                d = ','.join(str(e) for e in np.ndarray.tolist(sample_dat[j]))
+                                if vcf_header_tagtypes['FORMAT'][format_tag] == 'Float':
+                                    d = ','.join(str(round(e, 4)) for e in np.ndarray.tolist(sample_dat[j]))
                                 # undefined/missing value
                                 if '-2147483648' in d:
                                     d = d.replace('-2147483648', '.')
@@ -303,12 +339,12 @@ def run_vcf2tsv(arg_dict, logger):
                                                              ][format_tag] = d
                             else:
                                 d = '.'
-                                if column_types[format_tag] == 'Float':
+                                if vcf_header_tagtypes['FORMAT'][format_tag] == 'Float':
                                     if not math.isnan(sample_dat[j]):
                                         d = str(sample_dat[j][0])
-                                if column_types[format_tag] == 'String':
+                                if vcf_header_tagtypes['FORMAT'][format_tag] == 'String':
                                     d = str(sample_dat[j])
-                                if column_types[format_tag] == 'Integer':
+                                if vcf_header_tagtypes['FORMAT'][format_tag] == 'Integer':
                                     d = str(sample_dat[j][0])
                                 # undefined/missing value
                                 if d == '-2147483648' or d.casefold() == 'nan':
@@ -322,7 +358,7 @@ def run_vcf2tsv(arg_dict, logger):
                 tsv_elements.append(fixed_fields_string)
                 if not arg_dict['skip_info_data']:
                     if not arg_dict['skip_genotype_data']:
-                        if len(sample_columns_header) > 0:
+                        if len(vcf_header_tags['SAMPLE']) > 0:
                             tsv_elements.append("\t".join(str(n)
                                                 for n in vcf_info_data))
                             # one line per sample variant
@@ -362,7 +398,7 @@ def run_vcf2tsv(arg_dict, logger):
                         ofile.write('\t'.join(line_elements) + '\n')
                 else:
                     if not arg_dict['skip_genotype_data']:
-                        if len(sample_columns_header) > 0:
+                        if len(vcf_header_tags['SAMPLE']) > 0:
                             # one line per sample variant
                             for s in sorted(vcf_sample_genotype_data.keys()):
                                 sample = s
