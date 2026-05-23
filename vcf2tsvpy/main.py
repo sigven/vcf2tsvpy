@@ -340,7 +340,7 @@ def run_vcf2tsv(arg_dict, logger):
                             else:
                                 d = '.'
                                 if vcf_header_tagtypes['FORMAT'][format_tag] == 'Float':
-                                    if not math.isnan(sample_dat[j]):
+                                    if not np.isnan(sample_dat[j]).any():
                                         d = str(sample_dat[j][0])
                                 if vcf_header_tagtypes['FORMAT'][format_tag] == 'String':
                                     d = str(sample_dat[j])
