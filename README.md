@@ -18,6 +18,8 @@ The program utilizes the [cyvcf2](https://github.com/brentp/cyvcf2) library to p
 
 ## News
 
+* May 23rd 2026: **0.6.2 release**
+  - Replace `math.isnan()` with `np.isnan()` to fix NumPy 2.0+ compatibility
 * March 9th 2023: **0.6.1 release**
   - Handling of cases where a tag is found __both__ in `INFO` and `FORMAT` columns of VCF (e.g. `DP`). For such cases, the `INFO` tag name is now prepended with a *INFO_* string (e.g. `INFO_DP`), ensuring non-duplicate columns in the final output TSV file.
 

@@ -4,7 +4,6 @@ from cyvcf2 import VCF
 import numpy as np
 import re
 import logging
-import math
 import subprocess
 import os
 import sys
